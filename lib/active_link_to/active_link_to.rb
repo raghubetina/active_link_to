@@ -1,4 +1,12 @@
 module ActiveLinkTo
+  ACTIVE_OPTION_KEYS = %i[
+    active
+    class_active
+    class_inactive
+    active_disable
+    wrap_tag
+    wrap_class
+  ].freeze
 
   # Wrapper around link_to. Accepts following params:
   #   :active         => Boolean | Symbol | Regex | Controller/Action Pair
@@ -13,33 +21,31 @@ module ActiveLinkTo
     name = block_given? ? capture(&block) : args.shift
     options = args.shift || {}
     html_options = args.shift || {}
-    
+
     url = url_for(options)
 
-    active_options  = { }
-    link_options    = { }
+    active_options = {}
+    link_options = {}
     html_options.each do |k, v|
-      if [:active, :class_active, :class_inactive, :active_disable, :wrap_tag, :wrap_class].member?(k)
+      if ACTIVE_OPTION_KEYS.include?(k)
         active_options[k] = v
       else
         link_options[k] = v
       end
     end
 
-    css_class = link_options.delete(:class).to_s + ' '
-
-    wrap_tag    = active_options[:wrap_tag].present? ? active_options[:wrap_tag] : nil
-    wrap_class  = active_options[:wrap_class].present? ? active_options[:wrap_class] + ' ' : ''
+    wrap_tag = active_options[:wrap_tag].presence
+    active_class = active_link_to_class(url, active_options)
+    user_class = link_options.delete(:class)
 
     if wrap_tag.present?
-      wrap_class << active_link_to_class(url, active_options)
-      wrap_class.strip!
+      wrap_class = [active_options[:wrap_class], active_class].compact.map(&:to_s).reject(&:empty?).join(" ")
+      link_class = [user_class].compact.map(&:to_s).reject(&:empty?).join(" ")
     else
-      css_class << active_link_to_class(url, active_options)
-      css_class.strip!
+      link_class = [user_class, active_class].compact.map(&:to_s).reject(&:empty?).join(" ")
     end
+    link_options[:class] = link_class if link_class.present?
 
-    link_options[:class] = css_class if css_class.present?
     link_options['aria-current'] = 'page' if is_active_link?(url, active_options[:active])
 
     link = if active_options[:active_disable] === true && is_active_link?(url, active_options[:active])
@@ -48,7 +54,13 @@ module ActiveLinkTo
       link_to(name, url, link_options)
     end
 
-    wrap_tag ? content_tag(wrap_tag, link, class: (wrap_class if wrap_class.present?)) : link
+    if wrap_tag
+      wrap_options = {}
+      wrap_options[:class] = wrap_class if wrap_class.present?
+      content_tag(wrap_tag, link, wrap_options)
+    else
+      link
+    end
   end
 
   # Returns css class name. Takes the link's URL and its params

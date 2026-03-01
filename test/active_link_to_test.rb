@@ -1,6 +1,6 @@
 require_relative 'test_helper'
 
-class ActiveLinkToTest < MiniTest::Test
+class ActiveLinkToTest < Minitest::Test
 
   def test_is_active_link_booleans_test
     assert is_active_link?('/', true)
@@ -229,5 +229,23 @@ class ActiveLinkToTest < MiniTest::Test
     set_path('/äöü')
     link = active_link_to('label', '/äöü')
     assert_html link, 'a.active[href="/äöü"]', 'label'
+  end
+
+  def test_active_link_to_with_frozen_class_option
+    set_path('/root')
+    original_class = 'testing'.freeze
+    link = active_link_to('label', '/root', class: original_class)
+
+    assert_html link, 'a.testing.active[href="/root"]', 'label'
+    assert_equal 'testing', original_class
+  end
+
+  def test_active_link_to_with_frozen_wrap_class_option
+    set_path('/root')
+    original_wrap_class = 'nav-item'.freeze
+    link = active_link_to('label', '/root', wrap_tag: :li, wrap_class: original_wrap_class)
+
+    assert_html link, 'li.nav-item.active a[href="/root"]', 'label'
+    assert_equal 'nav-item', original_wrap_class
   end
 end

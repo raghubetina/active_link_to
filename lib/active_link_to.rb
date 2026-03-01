@@ -1,3 +1,5 @@
-require 'addressable/uri'
-require 'active_link_to/active_link_to'
-require 'active_link_to/version'
+require "addressable/uri"
+require "active_support/lazy_load_hooks"
+require "active_support/core_ext/object/blank"
+require "active_link_to/active_link_to"
+require "active_link_to/version"
